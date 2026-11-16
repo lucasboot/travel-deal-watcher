@@ -1,0 +1,1 @@
+"""Independent data-source adapters."""

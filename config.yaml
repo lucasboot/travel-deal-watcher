@@ -1,0 +1,85 @@
+app:
+  currency: BRL
+  locale_country: br
+  locale_language: pt
+
+origins:
+  - code: NAT
+    role: primary
+  - code: REC
+    role: alternative
+  - code: GRU
+    role: repositioning
+  - code: GIG
+    role: repositioning
+
+destinations:
+  - name: China
+    kind: country
+    code: CN
+    airports: [PEK, PKX, PVG, CAN, TFU]
+
+trip:
+  months_ahead_min: 3
+  months_ahead_max: 10
+  duration_min_days: 14
+  duration_max_days: 30
+  durations_to_sample_days: [14, 21, 30]
+  adults: 1
+  children: 0
+  infants: 0
+  cabin_class: economy
+
+connections:
+  minimum_layover_hours: 2
+  maximum_layover_hours: 6
+  maximum_stops_per_direction: 2
+  maximum_direction_duration_hours: 36
+  allow_airport_changes: false
+  separate_tickets_enabled: false
+
+intermediate_airports:
+  - MAD
+  - LIS
+  - IST
+  - DXB
+  - DOH
+  - BKK
+  - KUL
+  - SIN
+  - FRA
+  - CDG
+  - ADD
+  - HAN
+  - SGN
+
+alerts:
+  interesting_price_brl_per_person: 8000
+  reference_price_brl_per_person: 10000
+  re_alert_drop_percent: 5
+  re_alert_drop_brl_per_person: 300
+
+schedule:
+  promotions_interval_minutes: 30
+  discovery_interval_hours: 2
+  serpapi_cycles_per_day: 4
+  serpapi_max_queries_per_month: 200
+  travelpayouts_max_queries_per_cycle: 8
+  history_days: 400
+  daily_digest_hour_fortaleza: 8
+
+sources:
+  travelpayouts:
+    enabled: true
+    terms_accepted: false
+  serpapi:
+    enabled: true
+    terms_accepted: false
+  melhores_destinos_rss:
+    enabled: true
+
+storage:
+  state_path: data/state.json
+
+telegram:
+  enabled: true

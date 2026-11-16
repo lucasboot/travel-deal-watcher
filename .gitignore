@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Travel Deal Watcher local credentials and runtime state
+.env.*
+!.env.example
+data/*.json
+data/*.lock

@@ -1,0 +1,86 @@
+name: Monitor
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: What to run
+        type: choice
+        required: true
+        default: due
+        options:
+          - due
+          - all
+          - source-check
+          - promotions
+          - discovery
+          - fares
+          - digest
+
+permissions:
+  contents: write
+
+concurrency:
+  group: travel-deal-watcher-state
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package
+        run: python -m pip install .
+      - name: Prepare state branch
+        id: state
+        shell: bash
+        run: |
+          git fetch origin watcher-state:refs/remotes/origin/watcher-state || true
+          if git show-ref --verify --quiet refs/remotes/origin/watcher-state; then
+            git branch watcher-state refs/remotes/origin/watcher-state
+          else
+            git branch watcher-state
+          fi
+          git worktree add /tmp/watcher-state watcher-state
+          mkdir -p /tmp/watcher-state/data
+      - name: Run watcher
+        env:
+          MODE: ${{ inputs.mode || 'due' }}
+          WATCHER_STATE_PATH: /tmp/watcher-state/data/state.json
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          STATE_HASH_SECRET: ${{ secrets.STATE_HASH_SECRET }}
+          WATCHER_INTERESTING_PRICE_BRL: ${{ vars.WATCHER_INTERESTING_PRICE_BRL }}
+          WATCHER_PROMOTIONS_INTERVAL_MINUTES: ${{ vars.WATCHER_PROMOTIONS_INTERVAL_MINUTES }}
+          WATCHER_DISCOVERY_INTERVAL_HOURS: ${{ vars.WATCHER_DISCOVERY_INTERVAL_HOURS }}
+          WATCHER_SERPAPI_CYCLES_PER_DAY: ${{ vars.WATCHER_SERPAPI_CYCLES_PER_DAY }}
+          WATCHER_SERPAPI_MONTHLY_BUDGET: ${{ vars.WATCHER_SERPAPI_MONTHLY_BUDGET }}
+          WATCHER_TP_MAX_QUERIES_PER_CYCLE: ${{ vars.WATCHER_TP_MAX_QUERIES_PER_CYCLE }}
+          WATCHER_TRAVELPAYOUTS_ENABLED: ${{ vars.WATCHER_TRAVELPAYOUTS_ENABLED }}
+          WATCHER_SERPAPI_ENABLED: ${{ vars.WATCHER_SERPAPI_ENABLED }}
+          WATCHER_RSS_ENABLED: ${{ vars.WATCHER_RSS_ENABLED }}
+          WATCHER_TRAVELPAYOUTS_TERMS_ACCEPTED: ${{ vars.WATCHER_TRAVELPAYOUTS_TERMS_ACCEPTED }}
+          WATCHER_SERPAPI_TERMS_ACCEPTED: ${{ vars.WATCHER_SERPAPI_TERMS_ACCEPTED }}
+        run: travel-deal-watcher --config config.yaml run --mode "$MODE"
+      - name: Persist sanitized state
+        if: always() && steps.state.outcome == 'success'
+        shell: bash
+        run: |
+          git -C /tmp/watcher-state config user.name "github-actions[bot]"
+          git -C /tmp/watcher-state config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C /tmp/watcher-state add -f data/state.json
+          if ! git -C /tmp/watcher-state diff --cached --quiet; then
+            git -C /tmp/watcher-state commit -m "Update watcher state"
+            git -C /tmp/watcher-state push origin watcher-state
+          fi
