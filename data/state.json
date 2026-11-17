@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "runs": {
+    "promotions": "2026-11-17T03:10:35.179177+00:00",
+    "travelpayouts": "2026-11-17T03:10:35.179177+00:00",
+    "serpapi": "2026-11-17T03:10:35.179177+00:00"
+  },
+  "cursors": {},
+  "query_log": [],
+  "query_cache": {},
+  "fares": {},
+  "promotions": {},
+  "deliveries": {},
+  "last_alert_prices": {},
+  "validation": {}
+}
